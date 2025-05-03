@@ -1,0 +1,104 @@
+/* Main Dashboard Styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card Styles */
+.card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.card:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 15px 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* List Group Styles */
+.list-group-item {
+    border-left: none;
+    border-right: none;
+    padding: 12px 20px;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 8px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+}
+
+/* Card Height Adjustments */
+.card.h-100 {
+    height: auto !important; /* Remove fixed height */
+    min-height: 200px; /* Set minimum height */
+}
+
+/* Available Doctors Card */
+.card.mt-4 {
+    min-height: 220px; /* Reduced from 300px */
+}
+
+/* Card Body Adjustments */
+.card-body.d-flex {
+    min-height: 120px; /* Reduced from 150px */
+}
+
+/* System Overview Card */
+.card:not(.mt-4) {
+    min-height: 100px; /* Increased from 200px to 240px */
+}
+
+/* Recent Appointments Card */
+.recent-appointments-card {
+    height: auto !important;
+    min-height: 350px; /* Adjust this value as needed */
+}
+
+.recent-appointments-card .card-body {
+    min-height: 400px; /* Adjust this value as needed */
+}
