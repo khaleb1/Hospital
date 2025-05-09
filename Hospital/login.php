@@ -70,10 +70,7 @@ if (isset($_SESSION['user_id'])) {
                             </div>
                         </form>
                         
-                        <div class="mt-3 text-center">
-                            <p>Don't have an account? <a href="register.php">Register here</a></p>
-                            <p>Forgot your password? <a href="forgot-password.php">Reset it here</a></p>
-                        </div>
+                        
                     </div>
                     <div class="tab-pane fade" id="admin-login">
                         

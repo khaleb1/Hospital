@@ -2,8 +2,31 @@
 session_start();
 require_once __DIR__ . '/includes/config.php';
 
+// --- Brute Force Protection Logic ---
+if (!isset($_SESSION['login_attempts'])) {
+    $_SESSION['login_attempts'] = 0;
+}
+if (!isset($_SESSION['lockout_time'])) {
+    $_SESSION['lockout_time'] = 0;
+}
+
+// Check if user is locked out
+if ($_SESSION['login_attempts'] >= 3) {
+    $lockout_duration = 60; // seconds
+    $remaining = $_SESSION['lockout_time'] + $lockout_duration - time();
+    if ($remaining > 0) {
+        $_SESSION['login_error'] = "Too many failed login attempts. Please wait {$remaining} seconds before trying again.";
+        header("Location: login.php");
+        exit();
+    } else {
+        // Reset after lockout period
+        $_SESSION['login_attempts'] = 0;
+        $_SESSION['lockout_time'] = 0;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'];
+    $email = trim($_POST['email']);
     $password = $_POST['password'];
 
     // Query to find the user by email
@@ -51,7 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             exit();
         } else {
-            $_SESSION['login_error'] = "Invalid email or password.";
+            $_SESSION['login_attempts'] += 1;
+            if ($_SESSION['login_attempts'] >= 3) {
+                $_SESSION['lockout_time'] = time();
+                $_SESSION['login_error'] = "Too many failed login attempts. Please wait 60 seconds before trying again.";
+            } else {
+                $_SESSION['login_error'] = "Invalid email or password.";
+            }
+            header("Location: login.php");
+            exit();
         }
     } else {
         $_SESSION['login_error'] = "Invalid email or password.";

@@ -1,6 +1,6 @@
 </div>
 
-<footer class="footer mt-auto py-3 fixed-bottom" style="
+<footer class="footer mt-auto py-3 sticky-bottom" style="
     background: url('/Hospital/assets/img/hospital-bg.png') no-repeat center center fixed;
     background-size: cover;
     background-color: rgba(187, 215, 243, 0.9);

@@ -29,120 +29,81 @@ if (!is_numeric($_GET['doctor_id'])) {
 $doctorId = (int)$_GET['doctor_id'];
 
 // First, let's check if the table exists
-$tableCheck = $conn->query("SHOW TABLES LIKE 'availability'");
+$tableCheck = $conn->query("SHOW TABLES LIKE 'doctor_availability'");
 if ($tableCheck->num_rows === 0) {
     http_response_code(500);
-    echo json_encode(['error' => 'Availability table does not exist']);
+    echo json_encode(['error' => 'Doctor availability table does not exist']);
     exit();
 }
 
 // Let's check if there's any data for this doctor
-$dataCheck = $conn->query("SELECT COUNT(*) as count FROM availability WHERE doctor_id = $doctorId");
+$dataCheck = $conn->query("SELECT COUNT(*) as count FROM doctor_availability WHERE doctor_id = $doctorId");
 $row = $dataCheck->fetch_assoc();
+
+// If no data found for this doctor, return empty array
 if ($row['count'] == 0) {
-    http_response_code(200);
-    echo json_encode(['error' => 'No availability data found for this doctor', 'doctor_id' => $doctorId]);
+    echo json_encode([]);
     exit();
 }
 
-// --- Check if a specific date is provided to fetch times ---
+// --- Available Date Parameter (Optional) ---
 if (isset($_GET['available_date'])) {
-    // --- Scenario 2: Fetch Times for a Specific Date ---
-    $selectedDate = $_GET['available_date'];
-
-    // Basic validation for the date format (YYYY-MM-DD)
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $selectedDate)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid date format. Please use YYYY-MM-DD.']);
+    // If a specific date is requested, return time slots for that date
+    $date = $conn->real_escape_string($_GET['available_date']);
+    
+    $query = "SELECT 
+                availability_id as id,
+                start_time as start, 
+                end_time as end
+              FROM doctor_availability 
+              WHERE doctor_id = $doctorId 
+              AND available_date = '$date'
+              AND available_date >= CURDATE()
+              ORDER BY start_time";
+    
+    $result = $conn->query($query);
+    
+    if (!$result) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Database query failed: ' . $conn->error]);
         exit();
     }
-
-    try {
-        // Query for available time slots on the selected date
-        $query = "SELECT availability_id, start_time, end_time 
-                  FROM availability 
-                  WHERE doctor_id = ? 
-                    AND available_date = ?
-                    AND status = 'available'
-                  ORDER BY start_time ASC";
-                  
-        $stmt = $conn->prepare($query);
-        if (!$stmt) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Time query preparation failed: ' . $conn->error]);
-            exit();
-        }
+    
+    $slots = [];
+    while ($row = $result->fetch_assoc()) {
+        // Format the times to include AM/PM
+        $startTime = date('h:i A', strtotime($row['start']));
+        $endTime = date('h:i A', strtotime($row['end']));
         
-        $stmt->bind_param("is", $doctorId, $selectedDate);
-        
-        if (!$stmt->execute()) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Time query execution failed: ' . $stmt->error]);
-            exit();
-        }
-        
-        $result = $stmt->get_result();
-        
-        $slots = [];
-        while ($row = $result->fetch_assoc()) {
-            $slots[] = [
-                'id' => $row['availability_id'],
-                'start' => date("h:i A", strtotime($row['start_time'])),
-                'end' => date("h:i A", strtotime($row['end_time']))
-            ];
-        }
-        
-        $stmt->close();
-        $conn->close(); 
-
-        echo json_encode($slots);
-
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'An unexpected error occurred while fetching times: ' . $e->getMessage()]);
+        $slots[] = [
+            'id' => $row['id'],
+            'start' => $startTime,
+            'end' => $endTime
+        ];
     }
-
+    
+    echo json_encode($slots);
 } else {
-    // --- Scenario 1: Fetch Available Dates (Existing Logic) ---
-    try {
-        // Query for distinct available dates
-        $query = "SELECT DISTINCT available_date 
-                  FROM availability 
-                  WHERE doctor_id = ? 
-                    AND available_date >= CURDATE()
-                    AND status = 'available'
-                  ORDER BY available_date ASC";
-                  
-        $stmt = $conn->prepare($query);
-        if (!$stmt) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Date query preparation failed: ' . $conn->error]);
-            exit();
-        }
-        
-        $stmt->bind_param("i", $doctorId);
-        
-        if (!$stmt->execute()) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Date query execution failed: ' . $stmt->error]);
-            exit();
-        }
-        
-        $result = $stmt->get_result();
-        
-        $dates = [];
-        while ($row = $result->fetch_assoc()) {
-            $dates[] = $row['available_date']; 
-        }
-        
-        $stmt->close();
-        $conn->close(); 
-
-        echo json_encode($dates);
-
-    } catch (Exception $e) {
+    // If no date specified, return all available dates
+    $query = "SELECT DISTINCT available_date 
+              FROM doctor_availability 
+              WHERE doctor_id = $doctorId 
+              AND available_date >= CURDATE()
+              ORDER BY available_date";
+    
+    $result = $conn->query($query);
+    
+    if (!$result) {
         http_response_code(500);
-        echo json_encode(['error' => 'An unexpected error occurred while fetching dates: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Database query failed: ' . $conn->error]);
+        exit();
     }
+    
+    $dates = [];
+    while ($row = $result->fetch_assoc()) {
+        $dates[] = $row['available_date'];
+    }
+    
+    echo json_encode($dates);
 }
 ?>
